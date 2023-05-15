@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:project1/controllers/task_controller.dart';
 import 'package:project1/ui/theme.dart';
 import 'package:project1/ui/widgets/button.dart';
 import 'package:project1/ui/widgets/input_field.dart';
+
+import '../models/task.dart';
 
 // StatefulWidget class for the Add Task Screen Page
 class AddTaskPage extends StatefulWidget {
@@ -14,12 +17,15 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
-  /* Variables for controlling the data of input field are the ff:
-  * TextController variable for input String
-  * DateTime variable for time and date
-  * List variable for arrays of choices in Dropdown
-  * int variable for numerical data
+  /*
+  * Variables for controlling the data of input field are the ff:
+  * -TaskController
+  * -TextController variable for input String
+  * -DateTime variable for time and date data input
+  * -List variable for data arrays of given choices in Dropdown
+  * -int variable for numerical data input
   * */
+  final TaskController _taskController = Get.put(TaskController());
   final TextEditingController _titleController = TextEditingController()  ;
   final TextEditingController _noteController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
@@ -50,9 +56,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 "Add Task",
                 style: headingStyle,
               ),
-              /* Input Field Created for
+              /*
+              * Input Field Handler for the following:
               * Title, Note, Date, Time, Remind, Repeat and Category Data
-              * Create Task button for saving the data into Database
+              *
+              * Create Task button Handler for saving the data into Database
               * */
               MyInputField(title: "Title", hint: "Enter your title", controller: _titleController,),
               MyInputField(title: "Note", hint: "Enter your note", controller: _noteController,),
@@ -163,9 +171,15 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
+  //Custom Functions
+  /*
+  * Function that controls the Create Button that throw
+  * 1. Validation to the Input (must fill content)
+  * 2. Send the Data to database After Checking
+  * */
   _validateDate(){
     if (_titleController.text.isNotEmpty&&_noteController.text.isNotEmpty) {
-      //add a data base
+      _addTaskToDb();
       Get.back();
     }
     else if (_titleController.text.isEmpty || _noteController.text.isEmpty) {
@@ -174,11 +188,27 @@ class _AddTaskPageState extends State<AddTaskPage> {
           backgroundColor: Colors.white,
           colorText: pinkClr,
           icon: Icon(Icons.warning_amber_rounded, color: Colors.red),
-
       );
     }
   }
 
+  _addTaskToDb() async {
+    int value = await _taskController.addTask(
+        task: Task(
+          note: _noteController.text,
+          title: _titleController.text,
+          date: DateFormat.yMd().format(_selectedDate),
+          startTime: _startTime,
+          endTime: _endTime,
+          remind: _selectedRemind,
+          repeat: _selectedRepeat,
+          color: _selectedColor,
+          isCompleted: 0,
+        )
+    );
+    print("My id is " + "$value");
+  }
+  /*Function that handle Color picker*/
   _colorPallet() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +244,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
       ],
     );
   }
-
+  /*Function that handle the Header controls:
+  * 1. Return Page
+  * 2. User Profile
+  * */
   _appBar(BuildContext context){
     return AppBar(
       elevation: 0,
@@ -237,14 +270,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
       ],
     );
   }
-
+  /*Function that handle the Date Picker*/
   _getDateFromUser() async {
     DateTime? _pickerDate = await showDatePicker(context: context,
         initialDate: DateTime.now(),
         firstDate: DateTime(2015),
         lastDate: DateTime(2121)
     );
-
     if (_pickerDate!=null){
       setState(() {
         _selectedDate = _pickerDate;
@@ -254,11 +286,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
       print("it's null or somethings is wrong");
     }
   }
-
+  /*Function that control the Date Time picker and handle the null exception*/
   _getTimeFromUser({required bool isStartTime}) async {
     var pickedTime = await _showTimePicker();
     String _formatedTime = pickedTime.format(context);
-    print(_formatedTime);
     if (pickedTime==null){
       print("Time cancel");
     }
@@ -273,7 +304,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       });
     }
   }
-
+  /*Function that handle the controls for Time Picker and Formatting of time e.g 10:00*/
   _showTimePicker() {
     return showTimePicker(
         initialEntryMode: TimePickerEntryMode.input,
